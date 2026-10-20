@@ -1,0 +1,62 @@
+{
+  "name": "Car Video",
+  "identifier": "com.huzaifa.carvideo.source",
+  "subtitle": "Videos and YouTube on CarPlay",
+  "description": "Watch your own videos and YouTube on the CarPlay screen. Add videos from Files, Photos or a link, browse them in a grid sized for your car's screen, and control playback by touch, steering-wheel buttons or the iPhone. YouTube runs full screen on the car with an on-screen keyboard. Video is hidden while the car is moving (can be turned off). Needs TrollStore: the car screen uses a private entitlement.",
+  "iconURL": "https://huzaifaazhar.github.io/carplay-video-player/icon.png",
+  "website": "https://huzaifaazhar.github.io/carplay-video-player",
+  "tintColor": "#FF7A1F",
+  "apps": [
+    {
+      "name": "Car Video",
+      "bundleIdentifier": "com.huzaifa.carvideo",
+      "developerName": "Huzaifa Azhar",
+      "subtitle": "Videos and YouTube on CarPlay",
+      "localizedDescription": "Watch your own videos and YouTube on the CarPlay screen. Add videos from Files, Photos or a link, browse them in a grid sized for your car's screen, and control playback by touch, steering-wheel buttons or the iPhone. YouTube runs full screen on the car with an on-screen keyboard. Video is hidden while the car is moving (can be turned off). Needs TrollStore: the car screen uses a private entitlement.",
+      "iconURL": "https://huzaifaazhar.github.io/carplay-video-player/icon.png",
+      "tintColor": "#FF7A1F",
+      "category": "entertainment",
+      "screenshots": [
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/1-car-videos.png",
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/2-car-player.png",
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/3-car-youtube.png",
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/4-car-keyboard.png",
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/5-iphone-videos.png"
+      ],
+      "screenshotURLs": [
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/1-car-videos.png",
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/2-car-player.png",
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/3-car-youtube.png",
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/4-car-keyboard.png",
+        "https://huzaifaazhar.github.io/carplay-video-player/screenshots/5-iphone-videos.png"
+      ],
+      "versions": [
+        {
+          "version": "1.0.6",
+          "buildVersion": "6",
+          "date": "2026-10-20T20:34:36Z",
+          "localizedDescription": "Car YouTube keeps a readable page width on wide screens; centre the grid\n\n- The car page is kept to about 1100 px wide (zooming in further on very\n  wide screens), where YouTube's layout and text still work.\n- The video grid is centred vertically when the screen has spare height.\n- Screenshots from the CarPlay simulator test for the TrollApps source.",
+          "downloadURL": "https://huzaifaazhar.github.io/carplay-video-player/CarVideo.ipa",
+          "size": 442019,
+          "minOSVersion": "17.0"
+        }
+      ],
+      "version": "1.0.6",
+      "versionDate": "2026-10-20T20:34:36Z",
+      "versionDescription": "Car YouTube keeps a readable page width on wide screens; centre the grid\n\n- The car page is kept to about 1100 px wide (zooming in further on very\n  wide screens), where YouTube's layout and text still work.\n- The video grid is centred vertically when the screen has spare height.\n- Screenshots from the CarPlay simulator test for the TrollApps source.",
+      "downloadURL": "https://huzaifaazhar.github.io/carplay-video-player/CarVideo.ipa",
+      "size": 442019,
+      "appPermissions": {
+        "entitlements": [
+          "SBStarkCapable",
+          "com.apple.runningboard.assertions.webkit",
+          "com.apple.multitasking.systemappassertions"
+        ],
+        "privacy": {
+          "NSLocationWhenInUseUsageDescription": "Used only while CarPlay is connected, to hide video on the car screen when the car is moving."
+        }
+      }
+    }
+  ],
+  "news": []
+}
