@@ -26,4 +26,4 @@ tell application "System Events"
     end tell
 end tell
 EOF
-sleep 6
+sleep 3

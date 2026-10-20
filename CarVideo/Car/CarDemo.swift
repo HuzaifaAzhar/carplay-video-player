@@ -24,7 +24,7 @@ enum CarDemo {
     /// Asks the test for a screenshot and gives it time to take one before the screen changes.
     private static func shot(_ name: String) async -> Bool {
         log("shot \(name)")
-        return await wait(2.5)
+        return await wait(1.2)
     }
 
     private static func wait(_ seconds: Double) async -> Bool {
@@ -34,13 +34,11 @@ enum CarDemo {
 
     private static func run() async {
         let ui = CarUIState.shared
-        guard await wait(4), let info = CarConnection.shared.info else { return }
+        guard await wait(2), let info = CarConnection.shared.info else { return }
         log("start screen \(info.pointSize.text) pt scale \(info.scale) native \(info.nativeSize.text) usable \(info.usableText) insets \(info.insetsText)")
         ui.screen = .home
         ui.page = 0
-        guard await wait(2) else { return }
-        guard await shot("home") else { return }
-        guard await wait(2) else { return }
+        guard await wait(1), await shot("home") else { return }
 
         // A real tap on the YouTube button, sent by the test through the Simulator window.
         let frame = ui.youTubeButtonFrame
@@ -56,33 +54,26 @@ enum CarDemo {
         for _ in 0..<40 where WebModel.car.finishedLoads == loads {
             guard await wait(0.5) else { return }
         }
-        guard await wait(6) else { return }
-        guard await shot("youtube-home") else { return }
+        guard await wait(3), await shot("youtube-home") else { return }
 
         ui.keyboardText = "lofi hip hop"
         ui.showKeyboard()
-        guard await wait(1.5) else { return }
-        guard await shot("keyboard") else { return }
+        guard await wait(0.8), await shot("keyboard") else { return }
         ui.searchFromKeyboard()
-        guard await wait(10) else { return }
-        guard await shot("youtube-search") else { return }
+        guard await wait(5), await shot("youtube-search") else { return }
         ui.collapseToolbar()
-        guard await wait(1.5) else { return }
-        guard await shot("youtube-collapsed") else { return }
+        guard await wait(0.8), await shot("youtube-collapsed") else { return }
         ui.closeYouTube()
 
         let videos = VideoLibrary.shared.carList(.name)
         for video in videos.prefix(4) {
             ui.play(video, list: videos)
-            guard await wait(3) else { return }
-            guard await shot("player-\(slug(video.title))-controls") else { return }
+            guard await wait(1.5), await shot("player-\(slug(video.title))-controls") else { return }
             ui.controlsVisible = false
-            guard await wait(1.5) else { return }
-            guard await shot("player-\(slug(video.title))") else { return }
+            guard await wait(0.8), await shot("player-\(slug(video.title))") else { return }
         }
         ui.closePlayer()
-        guard await wait(1.5) else { return }
-        guard await shot("home-end") else { return }
+        guard await wait(1), await shot("home-end") else { return }
 
         // Other real car sizes (usable area in points), laid out at that size and shrunk to fit.
         let sizes = [CGSize(width: 420, height: 263),   // 1280×720 panel at @2.74
@@ -93,17 +84,19 @@ enum CarDemo {
             let name = "preview-\(Int(size.width))x\(Int(size.height))"
             ui.previewSize = size
             ui.screen = .home
-            guard await wait(1.5), await shot("\(name)-home") else { break }
+            guard await wait(1), await shot("\(name)-home") else { break }
             if let video = videos.first {
                 ui.play(video, list: videos)
-                guard await wait(2), await shot("\(name)-player") else { break }
+                guard await wait(1.5), await shot("\(name)-player") else { break }
             }
             ui.openYouTube()
-            guard await wait(4), await shot("\(name)-youtube") else { break }
-            ui.keyboardText = "news"
-            ui.showKeyboard()
-            guard await wait(1), await shot("\(name)-keyboard") else { break }
-            ui.keyboardVisible = false
+            guard await wait(3), await shot("\(name)-youtube") else { break }
+            if size == sizes.last {
+                ui.keyboardText = "news"
+                ui.showKeyboard()
+                guard await wait(0.8), await shot("\(name)-keyboard") else { break }
+                ui.keyboardVisible = false
+            }
             ui.closeYouTube()
         }
         ui.previewSize = nil

@@ -14,8 +14,11 @@ on:
   push:
     branches:
       - main
+    # Only when the car screen could have changed; the app build doesn't wait for this.
     paths:
-      - 'CarVideo/**'
+      - 'CarVideo/Car/**'
+      - 'CarVideo/App/**'
+      - 'CarVideo/Views/SharedViews.swift'
       - 'project.yml'
       - '.github/workflows/carplay-sim.yml'
       - 'scripts/carplay-sim/**'
@@ -101,7 +104,7 @@ jobs:
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
           open -a Simulator --args -CurrentDeviceUDID "$UDID"
-          sleep 20
+          sleep 12
 
       - name: Install the app with the sample videos
         run: |
@@ -116,7 +119,7 @@ jobs:
             > "$OUT/app-log.txt" 2>&1 &
           echo $! > "$OUT/logstream.pid"
           xcrun simctl launch "$UDID" "$BUNDLE_ID" -CarVideoDemo YES
-          sleep 15
+          sleep 8
           xcrun simctl io "$UDID" screenshot "$OUT/phone-1-videos.png"
 
       - name: Walk through the car screens at each display size

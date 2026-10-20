@@ -108,12 +108,14 @@ def main():
     scale = 2.0
     shot_index = 0
     started = False
-    deadline = time.time() + 300
-    next_icon_try = time.time() + 6
+    deadline = time.time() + 240
+    # Give up early if the app never opens on the car screen.
+    open_deadline = time.time() + 60
+    next_icon_try = time.time() + 4
     icon_attempts = 0
     pending_tap = None
 
-    while time.time() < deadline:
+    while time.time() < deadline and (started or time.time() < open_deadline):
         lines = log_lines(log_path)
         new, processed = lines[processed:], len(lines)
         for line in new:
@@ -152,15 +154,18 @@ def main():
                 print(f"  tapping car point {tx:.0f},{ty:.0f} -> desktop {dx},{dy}")
                 focus_carplay_window(geom)
                 run(["cliclick", f"c:{dx},{dy}"])
-                time.sleep(4)
-                if not any("touch ok" in l for l in log_lines(log_path)[-20:]):
+                for _ in range(8):
+                    time.sleep(0.5)
+                    if any("touch ok" in l for l in log_lines(log_path)[-20:]):
+                        break
+                else:
                     print("  no response yet; trying a press-and-hold click")
                     run(["cliclick", f"dd:{dx},{dy}", "w:150", f"du:{dx},{dy}"])
                 os.remove(probe)
 
         if not started and time.time() >= next_icon_try and icon_attempts < 4:
             icon_attempts += 1
-            next_icon_try = time.time() + 15
+            next_icon_try = time.time() + 12
             probe = os.path.join(out_dir, f"{label}-home-{icon_attempts}.png")
             geom = window_geometry()
             if geom and screenshot(udid, probe):

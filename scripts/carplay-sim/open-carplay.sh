@@ -111,7 +111,7 @@ tell application "System Events"
 end tell
 EOF
 
-sleep 12
+sleep 8
 # Keep the CarPlay window clear of the iPhone window so clicks land on the car screen.
 osascript <<'EOF' || true
 tell application "System Events"
@@ -126,7 +126,7 @@ tell application "System Events"
     end tell
 end tell
 EOF
-sleep 3
+sleep 2
 xcrun simctl io "$UDID" screenshot --display=external "$OUT/$LABEL-1-carplay-home.png" || echo "No external display screenshot"
 screencapture -x "$OUT/$LABEL-1-desktop.png" || true
 osascript -e 'tell application "System Events" to tell process "Simulator" to get {name, position, size} of every window' || true
