@@ -85,8 +85,10 @@ def find_icon(path):
     width, height = img.size
     px = img.load()
     xs, ys = [], []
+    # The dock is about 50 pt wide whatever the screen size.
+    dock = int(min(width * 0.14, 120))
     for yy in range(0, height, 2):
-        for xx in range(int(width * 0.14), width, 2):
+        for xx in range(dock, width, 2):
             r, g, b = px[xx, yy]
             if r > 200 and 60 < g < 200 and b < 80 and r - b > 150:
                 xs.append(xx)
@@ -169,8 +171,10 @@ def main():
                     print(f"  app icon at {spot} -> desktop {dx},{dy}")
                     focus_carplay_window(geom)
                     run(["cliclick", f"c:{dx},{dy}"])
-                    time.sleep(2)
-                    run(["cliclick", f"dd:{dx},{dy}", "w:150", f"du:{dx},{dy}"])
+                    time.sleep(3)
+                    if not any("Car screen connected" in l for l in log_lines(log_path)[processed:]):
+                        run(["cliclick", f"dd:{dx},{dy}", "w:150", f"du:{dx},{dy}"])
+                    run(["screencapture", "-x", os.path.join(out_dir, f"{label}-home-{icon_attempts}-desktop.png")])
                 else:
                     # Not on this page of the CarPlay home screen: swipe to the next one.
                     x, y, w, h = geom

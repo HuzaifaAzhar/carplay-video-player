@@ -57,13 +57,17 @@ on run argv
                     try
                         set fields to every text field of t
                         if (count of fields) >= 2 then
-                            set value of item 1 of fields to wantW
-                            set value of item 2 of fields to wantH
-                            log "Set width/height fields to " & wantW & "x" & wantH
-                            if (count of fields) >= 3 then
-                                set value of item 3 of fields to wantS
-                                log "Set third field to " & wantS
-                            end if
+                            -- Type into each field and Tab out so the dialog commits the value.
+                            repeat with pair in {{1, wantW}, {2, wantH}}
+                                set f to item (item 1 of pair) of fields
+                                set focused of f to true
+                                delay 0.3
+                                keystroke "a" using command down
+                                keystroke (item 2 of pair)
+                                keystroke tab
+                                delay 0.3
+                            end repeat
+                            log "Fields now: " & (value of item 1 of fields as string) & " x " & (value of item 2 of fields as string)
                         end if
                     end try
                     try
@@ -122,6 +126,22 @@ tell application "System Events"
 end tell
 EOF
 
-sleep 15
+sleep 12
+# Keep the CarPlay window clear of the iPhone window so clicks land on the car screen.
+osascript <<'EOF' || true
+tell application "System Events"
+    tell process "Simulator"
+        repeat with w in every window
+            if name of w contains "CarPlay" then
+                set position of w to {0, 30}
+            else if name of w contains "iPhone" then
+                set position of w to {700, 30}
+            end if
+        end repeat
+    end tell
+end tell
+EOF
+sleep 3
 xcrun simctl io "$UDID" screenshot --display=external "$OUT/$LABEL-1-carplay-home.png" || echo "No external display screenshot"
+screencapture -x "$OUT/$LABEL-1-desktop.png" || true
 osascript -e 'tell application "System Events" to tell process "Simulator" to get {name, position, size} of every window' || true

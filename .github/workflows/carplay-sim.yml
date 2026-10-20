@@ -126,7 +126,7 @@ jobs:
             LABEL="${W}x${H}"
             echo "::group::CarPlay display $SPEC"
             bash scripts/carplay-sim/open-carplay.sh "$W" "$H" "$S" "$LABEL"
-            python3 scripts/carplay-sim/drive.py "$UDID" "$LOG" "$OUT" "$LABEL" || echo "Walk-through at $SPEC did not finish"
+            python3 -u scripts/carplay-sim/drive.py "$UDID" "$LOG" "$OUT" "$LABEL" || echo "Walk-through at $SPEC did not finish"
             xcrun simctl io "$UDID" screenshot "$OUT/phone-$LABEL.png" || true
             bash scripts/carplay-sim/close-carplay.sh
             echo "::endgroup::"

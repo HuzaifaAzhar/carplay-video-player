@@ -44,16 +44,18 @@ struct CarGridLayout: Equatable {
         let area = metrics.gridArea
         let gap = metrics.gap
         let textHeight = metrics.tileTextHeight
-        // Thumbnails big enough to recognise at arm's length.
+        // Tiles and thumbnails big enough to read and hit at arm's length.
         let minThumb = max(56, metrics.short * 0.3)
+        let minWidth = max(110, metrics.short * 0.45)
         var best: (columns: Int, rows: Int, width: CGFloat, thumb: CGFloat)?
         var largest = (columns: 2, rows: 1, width: CGFloat(100), thumb: CGFloat(0))
         for rows in 1...3 {
             for columns in 2...6 {
                 let width = (area.width - gap * CGFloat(columns - 1)) / CGFloat(columns)
                 let tileHeight = (area.height - gap * CGFloat(rows - 1)) / CGFloat(rows)
-                let thumb = min(width * 9 / 16, tileHeight - textHeight)
-                guard width >= 100, thumb > 0 else { continue }
+                // Thumbnails may grow from 16:9 up to 4:3 to use the height the screen has.
+                let thumb = min(width * 3 / 4, tileHeight - textHeight)
+                guard width >= minWidth, thumb > 0 else { continue }
                 if thumb > largest.thumb { largest = (columns, rows, width, thumb) }
                 guard thumb >= minThumb else { continue }
                 if let current = best {

@@ -21,6 +21,12 @@ enum CarDemo {
         Diagnostics.log("Demo", message)
     }
 
+    /// Asks the test for a screenshot and gives it time to take one before the screen changes.
+    private static func shot(_ name: String) async -> Bool {
+        log("shot \(name)")
+        return await wait(2.5)
+    }
+
     private static func wait(_ seconds: Double) async -> Bool {
         try? await Task.sleep(for: .seconds(seconds))
         return !Task.isCancelled
@@ -33,7 +39,7 @@ enum CarDemo {
         ui.screen = .home
         ui.page = 0
         guard await wait(2) else { return }
-        log("shot home")
+        guard await shot("home") else { return }
         guard await wait(2) else { return }
 
         // A real tap on the YouTube button, sent by the test through the Simulator window.
@@ -51,32 +57,32 @@ enum CarDemo {
             guard await wait(0.5) else { return }
         }
         guard await wait(6) else { return }
-        log("shot youtube-home")
+        guard await shot("youtube-home") else { return }
 
         ui.keyboardText = "lofi hip hop"
         ui.showKeyboard()
         guard await wait(1.5) else { return }
-        log("shot keyboard")
+        guard await shot("keyboard") else { return }
         ui.searchFromKeyboard()
         guard await wait(10) else { return }
-        log("shot youtube-search")
+        guard await shot("youtube-search") else { return }
         ui.collapseToolbar()
         guard await wait(1.5) else { return }
-        log("shot youtube-collapsed")
+        guard await shot("youtube-collapsed") else { return }
         ui.closeYouTube()
 
         let videos = VideoLibrary.shared.carList(.name)
         for video in videos.prefix(4) {
             ui.play(video, list: videos)
             guard await wait(3) else { return }
-            log("shot player-\(slug(video.title))-controls")
+            guard await shot("player-\(slug(video.title))-controls") else { return }
             ui.controlsVisible = false
             guard await wait(1.5) else { return }
-            log("shot player-\(slug(video.title))")
+            guard await shot("player-\(slug(video.title))") else { return }
         }
         ui.closePlayer()
         guard await wait(1.5) else { return }
-        log("shot home-end")
+        guard await shot("home-end") else { return }
         log("done")
     }
 

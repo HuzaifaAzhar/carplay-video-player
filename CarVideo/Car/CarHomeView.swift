@@ -31,22 +31,25 @@ struct CarHomeView: View {
 
     private func topBar(count: Int, page: Int, pageCount: Int) -> some View {
         let settings = AppSettings.shared
+        // On narrow screens the sort button shows only its icon; the subtitle names the order.
+        let compact = metrics.size.width < 520
         return HStack(spacing: metrics.gap) {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Videos")
                     .font(.system(size: metrics.titleFont, weight: .bold))
-                Text(count == 1 ? "1 video" : "\(count) videos")
+                Text((count == 1 ? "1 video" : "\(count) videos") + (count > 1 ? " · \(settings.carSort.title)" : ""))
                     .font(.system(size: metrics.captionFont))
                     .foregroundStyle(.white.opacity(0.6))
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .layoutPriority(1)
+            .minimumScaleFactor(0.6)
             Spacer(minLength: 0)
             if count > 1 {
-                CarPillButton(title: settings.carSort.title, systemName: settings.carSort.symbol, metrics: metrics) {
-                    settings.carSort = settings.carSort.next
-                    CarUIState.shared.page = 0
+                if compact {
+                    CarIconButton(systemName: settings.carSort.symbol, size: metrics.button) { cycleSort() }
+                } else {
+                    CarPillButton(title: settings.carSort.title, systemName: settings.carSort.symbol, metrics: metrics) { cycleSort() }
+                        .fixedSize()
                 }
             }
             if pageCount > 1 {
@@ -60,8 +63,15 @@ struct CarHomeView: View {
                     .opacity(page + 1 < pageCount ? 1 : 0.35)
             }
             youTubeButton
+                .fixedSize()
         }
         .frame(height: metrics.barHeight)
+    }
+
+    private func cycleSort() {
+        let settings = AppSettings.shared
+        settings.carSort = settings.carSort.next
+        CarUIState.shared.page = 0
     }
 
     private var youTubeButton: some View {
