@@ -67,13 +67,15 @@ struct PlayerLayerRepresentable: UIViewRepresentable {
 /// Holds a web view at the car screen's own resolution and scales it down to fit. iOS hands the car window
 /// a point size (a 1280×720 screen can come through as about 467×263 pt), and a page laid out for that
 /// would look like a phone page and crop video. Laid out at the pixel size instead, one page pixel lands on
-/// one screen pixel. `zoom` above 1 makes the page bigger (fewer page pixels per screen).
+/// one screen pixel. `zoom` above 1 makes the page bigger (fewer page pixels per screen). On very wide
+/// screens the page is kept to about 1100 px wide, where YouTube's layout and text still work.
 final class ScaledWebContainer: UIView {
     private(set) var webView: WKWebView
     var zoom: CGFloat = 1 {
         didSet { if oldValue != zoom { setNeedsLayout() } }
     }
     private var loggedSize: CGSize = .zero
+    private static let maxPageWidth: CGFloat = 1100
 
     init(webView: WKWebView) {
         self.webView = webView
@@ -101,7 +103,7 @@ final class ScaledWebContainer: UIView {
         let area = bounds
         guard area.width > 0, area.height > 0 else { return }
         let scale = max(1, traitCollection.displayScale)
-        let factor = clamp(zoom, 0.5, 3)
+        let factor = max(clamp(zoom, 0.5, 3), area.width * scale / Self.maxPageWidth)
         let page = CGSize(width: (area.width * scale / factor).rounded(), height: (area.height * scale / factor).rounded())
         webView.transform = .identity
         webView.bounds = CGRect(origin: .zero, size: page)
@@ -109,7 +111,7 @@ final class ScaledWebContainer: UIView {
         webView.transform = CGAffineTransform(scaleX: area.width / page.width, y: area.height / page.height)
         if page != loggedSize {
             loggedSize = page
-            Diagnostics.log("Web", "Car page area \(area.size.text) pt at @\(scale)x → page \(page.text) (zoom \(factor))")
+            Diagnostics.log("Web", "Car page area \(area.size.text) pt at @\(scale)x → page \(page.text) (zoom \(String(format: "%.2f", factor)))")
         }
     }
 }

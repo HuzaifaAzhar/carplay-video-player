@@ -109,7 +109,8 @@ struct CarHomeView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Wide screens fit fewer rows than they have height for; centre what's there.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }
 
