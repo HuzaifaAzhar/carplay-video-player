@@ -1,7 +1,9 @@
 #!/bin/bash
 # Attaches a CarPlay display in Simulator.app via its menu (there's no simctl command for it).
-# With CarPlayExtraOptions on, Simulator asks for the display's width, height and scale first.
-# Usage: open-carplay.sh <width px> <height px> <scale> <label>
+# With CarPlayExtraOptions on, Simulator asks for the display's width and height first (the scale stays at
+# its default @2: typing into that combo box breaks the display). Simulator's CarPlay UI uses an 800x480 px
+# area whatever the display size, so other car sizes are covered by the app's preview mode instead.
+# Usage: open-carplay.sh <width px> <height px> <scale, ignored> <label>
 set -u
 OUT="${OUT:-carplay-results}"
 W="${1:-800}"; H="${2:-480}"; S="${3:-2}"; LABEL="${4:-default}"
@@ -69,34 +71,6 @@ on run argv
                             end repeat
                             log "Fields now: " & (value of item 1 of fields as string) & " x " & (value of item 2 of fields as string)
                         end if
-                    end try
-                    try
-                        log "Controls: " & (count of every combo box of t) & " combo boxes, " & (count of every pop up button of t) & " pop-up buttons, " & (count of every text field of t) & " text fields"
-                        repeat with cb in (every combo box of t)
-                            set focused of cb to true
-                            delay 0.3
-                            keystroke "a" using command down
-                            keystroke wantS
-                            keystroke tab
-                            log "Scale combo box now " & (value of cb as string)
-                        end repeat
-                    end try
-                    try
-                        repeat with pb in (every pop up button of t)
-                            click pb
-                            delay 1
-                            set picked to false
-                            repeat with mi in (every menu item of menu 1 of pb)
-                                set n to name of mi as string
-                                if n contains (wantS & "x") or n contains ("@" & wantS) or n is wantS then
-                                    click mi
-                                    set picked to true
-                                    log "Picked scale item " & n
-                                    exit repeat
-                                end if
-                            end repeat
-                            if not picked then key code 53
-                        end repeat
                     end try
                 end repeat
             end repeat

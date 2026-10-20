@@ -19,6 +19,8 @@ final class CarUIState {
     var keyboardText = ""
     /// Where the YouTube button is, in car-window points. The simulator test taps it to check touch input.
     var youTubeButtonFrame: CGRect = .zero
+    /// Demo only: lay the car screen out at this size and shrink it to fit, to check bigger cars' layouts.
+    var previewSize: CGSize?
 
     @ObservationIgnored private var hideControlsTask: Task<Void, Never>?
     @ObservationIgnored private var collapseToolbarTask: Task<Void, Never>?

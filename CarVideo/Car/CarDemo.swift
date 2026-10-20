@@ -83,6 +83,31 @@ enum CarDemo {
         ui.closePlayer()
         guard await wait(1.5) else { return }
         guard await shot("home-end") else { return }
+
+        // Other real car sizes (usable area in points), laid out at that size and shrunk to fit.
+        let sizes = [CGSize(width: 420, height: 263),   // 1280×720 panel at @2.74
+                     CGSize(width: 590, height: 360),   // 1280×720 at @2
+                     CGSize(width: 900, height: 360),   // 1920×720 ultra-wide at @2
+                     CGSize(width: 640, height: 560)]   // tall unit
+        for size in sizes {
+            let name = "preview-\(Int(size.width))x\(Int(size.height))"
+            ui.previewSize = size
+            ui.screen = .home
+            guard await wait(1.5), await shot("\(name)-home") else { break }
+            if let video = videos.first {
+                ui.play(video, list: videos)
+                guard await wait(2), await shot("\(name)-player") else { break }
+            }
+            ui.openYouTube()
+            guard await wait(4), await shot("\(name)-youtube") else { break }
+            ui.keyboardText = "news"
+            ui.showKeyboard()
+            guard await wait(1), await shot("\(name)-keyboard") else { break }
+            ui.keyboardVisible = false
+            ui.closeYouTube()
+        }
+        ui.previewSize = nil
+        ui.closePlayer()
         log("done")
     }
 

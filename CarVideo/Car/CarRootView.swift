@@ -6,7 +6,10 @@ struct CarRootView: View {
     var body: some View {
         let ui = CarUIState.shared
         GeometryReader { geo in
-            let metrics = CarMetrics(size: geo.size)
+            let preview = ui.previewSize
+            let size = preview ?? geo.size
+            let metrics = CarMetrics(size: size)
+            let factor = preview.map { min(geo.size.width / $0.width, geo.size.height / $0.height) } ?? 1
             ZStack {
                 switch ui.screen {
                 case .home:
@@ -17,7 +20,18 @@ struct CarRootView: View {
                     CarYouTubeView(metrics: metrics)
                 }
             }
-            .frame(width: geo.size.width, height: geo.size.height)
+            .frame(width: size.width, height: size.height)
+            .overlay(alignment: .bottomTrailing) {
+                if let preview {
+                    Text("Preview \(preview.text) pt")
+                        .font(.system(size: 13 / factor, weight: .bold))
+                        .padding(4 / factor)
+                        .background(Color.purple)
+                }
+            }
+            .scaleEffect(factor, anchor: .topLeading)
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+            .clipped()
         }
         .background(Color.black.ignoresSafeArea())
         .foregroundStyle(.white)

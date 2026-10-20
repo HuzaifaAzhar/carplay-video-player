@@ -1,15 +1,16 @@
 name: CarPlay Simulator Test
 
-# Runs the app in the iOS Simulator with CarPlay displays of several sizes attached, lets the app's demo
-# mode walk through every car screen (home grid, a real tap on the YouTube button, YouTube, the keyboard,
-# video in four shapes) and photographs each step. Results go to the "carplay-test" pre-release.
+# Runs the app in the iOS Simulator with a CarPlay display attached and lets the app's demo mode walk
+# through every car screen (home grid, a real tap on the YouTube button, YouTube, the keyboard, video in
+# four shapes), photographing each step. It then previews the layout at other real car sizes (laid out at
+# that size and scaled to fit). Results go to the "carplay-test" pre-release.
 on:
   workflow_dispatch:
     inputs:
       sizes:
         description: 'CarPlay displays to test, as WIDTHxHEIGHT@SCALE separated by spaces'
         required: false
-        default: '800x480@2 800x480@3 800x480@1'
+        default: '800x480@2'
   push:
     branches:
       - main
@@ -33,7 +34,7 @@ jobs:
     timeout-minutes: 60
     env:
       OUT: ${{ github.workspace }}/carplay-results
-      SIZES: ${{ github.event.inputs.sizes || '800x480@2 800x480@3 800x480@1' }}
+      SIZES: ${{ github.event.inputs.sizes || '800x480@2' }}
       BUNDLE_ID: com.huzaifa.carvideo
     steps:
       - name: Checkout repository
