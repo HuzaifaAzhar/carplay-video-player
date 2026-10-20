@@ -73,6 +73,12 @@ def focus_carplay_window(geom):
     time.sleep(0.8)
 
 
+def tap(x, y):
+    """A touch the Simulator reliably registers: move there first, then press for 150 ms. Instant clicks
+    on the CarPlay window are sometimes dropped."""
+    run(["cliclick", f"m:{x},{y}", "w:300", f"dd:{x},{y}", "w:150", f"du:{x},{y}"])
+
+
 def to_desktop(px, py, img_w, img_h, geom):
     x, y, w, h = geom
     content_h = h - TITLE_BAR
@@ -154,14 +160,14 @@ def main():
                 dx, dy = to_desktop(tx * scale, ty * scale, img_w, img_h, geom)
                 print(f"  tapping car point {tx:.0f},{ty:.0f} -> desktop {dx},{dy}")
                 focus_carplay_window(geom)
-                run(["cliclick", f"c:{dx},{dy}"])
+                tap(dx, dy)
                 for _ in range(8):
                     time.sleep(0.5)
                     if any("touch ok" in l for l in log_lines(log_path)[-20:]):
                         break
                 else:
-                    print("  no response yet; trying a press-and-hold click")
-                    run(["cliclick", f"dd:{dx},{dy}", "w:150", f"du:{dx},{dy}"])
+                    print("  no response yet; tapping again")
+                    tap(dx, dy)
                 os.remove(probe)
 
         if not started and time.time() >= next_icon_try and icon_attempts < 4:
@@ -178,12 +184,12 @@ def main():
                     focus_carplay_window(geom)
                     # A first tap on empty wallpaper (bottom right), as the Music DL test does, then the icon.
                     x, y, w, h = geom
-                    run(["cliclick", f"c:{x + w - 30},{y + h - 20}"])
+                    tap(x + w - 30, y + h - 20)
                     time.sleep(1)
-                    run(["cliclick", f"c:{dx},{dy}"])
+                    tap(dx, dy)
                     time.sleep(3)
                     if not any("Car screen connected" in l for l in log_lines(log_path)[processed:]):
-                        run(["cliclick", f"dd:{dx},{dy}", "w:150", f"du:{dx},{dy}"])
+                        tap(dx, dy)
                     run(["screencapture", "-x", os.path.join(out_dir, f"{label}-home-{icon_attempts}-desktop.png")])
                 else:
                     # Not on this page of the CarPlay home screen: swipe to the next one.
