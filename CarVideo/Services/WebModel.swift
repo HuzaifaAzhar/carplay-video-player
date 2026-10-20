@@ -100,8 +100,8 @@ final class WebModel {
         webView?.reload()
     }
 
-    func scroll(pages: Double) {
-        webView?.evaluateJavaScript(YouTube.scrollScript(pages: pages), completionHandler: nil)
+    func stopLoading() {
+        webView?.stopLoading()
     }
 
     func pauseVideos() {

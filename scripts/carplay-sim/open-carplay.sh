@@ -71,6 +71,17 @@ on run argv
                         end if
                     end try
                     try
+                        log "Controls: " & (count of every combo box of t) & " combo boxes, " & (count of every pop up button of t) & " pop-up buttons, " & (count of every text field of t) & " text fields"
+                        repeat with cb in (every combo box of t)
+                            set focused of cb to true
+                            delay 0.3
+                            keystroke "a" using command down
+                            keystroke wantS
+                            keystroke tab
+                            log "Scale combo box now " & (value of cb as string)
+                        end repeat
+                    end try
+                    try
                         repeat with pb in (every pop up button of t)
                             click pb
                             delay 1

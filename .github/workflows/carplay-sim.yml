@@ -9,7 +9,7 @@ on:
       sizes:
         description: 'CarPlay displays to test, as WIDTHxHEIGHT@SCALE separated by spaces'
         required: false
-        default: '800x480@2 1280x720@2 1920x720@2'
+        default: '800x480@2 800x480@3 800x480@1'
   push:
     branches:
       - main
@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 60
     env:
       OUT: ${{ github.workspace }}/carplay-results
-      SIZES: ${{ github.event.inputs.sizes || '800x480@2 1280x720@2 1920x720@2' }}
+      SIZES: ${{ github.event.inputs.sizes || '800x480@2 800x480@3 800x480@1' }}
       BUNDLE_ID: com.huzaifa.carvideo
     steps:
       - name: Checkout repository
@@ -121,6 +121,10 @@ jobs:
       - name: Walk through the car screens at each display size
         run: |
           LOG="$DATA/Library/Application Support/Diagnostics/diagnostics.log"
+          # Simulator ignores clicks on the first CarPlay display of a session, so attach one and throw it away.
+          bash scripts/carplay-sim/open-carplay.sh 800 480 2 warmup
+          bash scripts/carplay-sim/close-carplay.sh
+          rm -f "$OUT"/warmup-*
           for SPEC in $SIZES; do
             W=${SPEC%%x*}; REST=${SPEC#*x}; H=${REST%%@*}; S=${REST#*@}
             LABEL="${W}x${H}"

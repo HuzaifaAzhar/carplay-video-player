@@ -37,7 +37,7 @@ struct CarHomeView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Videos")
                     .font(.system(size: metrics.titleFont, weight: .bold))
-                Text((count == 1 ? "1 video" : "\(count) videos") + (count > 1 ? " · \(settings.carSort.title)" : ""))
+                Text(subtitle(count: count, page: page, pageCount: pageCount, compact: compact))
                     .font(.system(size: metrics.captionFont))
                     .foregroundStyle(.white.opacity(0.6))
             }
@@ -55,10 +55,12 @@ struct CarHomeView: View {
             if pageCount > 1 {
                 CarIconButton(systemName: "chevron.left", size: metrics.button) { turnPage(to: page - 1, count: pageCount) }
                     .opacity(page > 0 ? 1 : 0.35)
-                Text("\(page + 1)/\(pageCount)")
-                    .font(.system(size: metrics.captionFont, weight: .semibold).monospacedDigit())
-                    .lineLimit(1)
-                    .fixedSize()
+                if !compact {
+                    Text("\(page + 1)/\(pageCount)")
+                        .font(.system(size: metrics.captionFont, weight: .semibold).monospacedDigit())
+                        .lineLimit(1)
+                        .fixedSize()
+                }
                 CarIconButton(systemName: "chevron.right", size: metrics.button) { turnPage(to: page + 1, count: pageCount) }
                     .opacity(page + 1 < pageCount ? 1 : 0.35)
             }
@@ -66,6 +68,14 @@ struct CarHomeView: View {
                 .fixedSize()
         }
         .frame(height: metrics.barHeight)
+    }
+
+    /// "4 videos", or on narrow screens the sort order and page, which have no room of their own there.
+    private func subtitle(count: Int, page: Int, pageCount: Int, compact: Bool) -> String {
+        let videos = count == 1 ? "1 video" : "\(count) videos"
+        guard compact, count > 1 else { return videos }
+        let sort = AppSettings.shared.carSort.title
+        return pageCount > 1 ? "\(sort) · \(page + 1)/\(pageCount)" : "\(sort) · \(videos)"
     }
 
     private func cycleSort() {

@@ -134,8 +134,4 @@ enum YouTube {
     """
 
     static let pauseVideosScript = "document.querySelectorAll('video').forEach(function (v) { v.pause(); });"
-
-    static func scrollScript(pages: Double) -> String {
-        "window.scrollBy({ top: window.innerHeight * \(pages) * 0.8, behavior: 'smooth' });"
-    }
 }

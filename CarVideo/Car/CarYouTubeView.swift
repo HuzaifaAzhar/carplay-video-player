@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// YouTube's website on the car screen, laid out at the screen's real resolution (see `ScaledWebContainer`),
-/// with a small floating toolbar: close, back, home, search, page up/down (for cars without swipe) and reload.
+/// with a small floating toolbar: close, back, home, search and reload. UIKit adds its own CarPlay scroll
+/// arrows to the page, for cars that don't report swipes.
 struct CarYouTubeView: View {
     let metrics: CarMetrics
 
@@ -47,16 +48,8 @@ struct CarYouTubeView: View {
                     ui.expandToolbar()
                 }
                 CarIconButton(systemName: "magnifyingglass", size: size) { ui.showKeyboard() }
-                CarIconButton(systemName: "chevron.up", size: size) {
-                    web.scroll(pages: -1)
-                    ui.expandToolbar()
-                }
-                CarIconButton(systemName: "chevron.down", size: size) {
-                    web.scroll(pages: 1)
-                    ui.expandToolbar()
-                }
                 CarIconButton(systemName: web.isLoading ? "xmark.circle" : "arrow.clockwise", size: size) {
-                    web.reload()
+                    if web.isLoading { web.stopLoading() } else { web.reload() }
                     ui.expandToolbar()
                 }
                 CarIconButton(systemName: "chevron.left.2", size: size) { ui.collapseToolbar() }

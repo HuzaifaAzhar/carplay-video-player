@@ -3,7 +3,7 @@
 Watch your own videos and YouTube on the **CarPlay** screen. iPhone app, iOS 17+, installed with **TrollStore**.
 
 - **Your videos in the car:** a grid of thumbnails sized for your car's screen, paged with big buttons (many head units only report taps, not swipes). Tap to play full screen; tap again for controls: play/pause, skip, previous/next, a position bar you can tap or drag, Fit/Fill and speed.
-- **YouTube button:** opens YouTube's website full screen on the car, laid out at the car screen's real resolution so it isn't a stretched phone page. Floating toolbar with back, home, search, page up/down and reload, and an on-screen keyboard for searching. Ads are skipped (can be turned off).
+- **YouTube button:** opens YouTube's website full screen on the car, laid out at the car screen's real resolution so it isn't a stretched phone page. Floating toolbar with back, home, search and reload (iOS adds CarPlay scroll arrows to the page for cars that only report taps), and an on-screen keyboard for searching. Ads are skipped (can be turned off).
 - **Fits any car screen:** everything scales from the area CarPlay gives the app and stays clear of the CarPlay dock. Video can optionally go behind the dock.
 - **Add videos** from Files, Photos or a link (download, or save the link and stream). The app's folder also shows in the Files app as *Car Video*, so you can copy videos straight in. MP4, MOV and M4V play; MKV/WebM/AVI need converting first.
 - **Remembers where you stopped** in every video, with watched/unwatched, sorting (date added, name, length, size, recently played), filters and folders.
@@ -36,6 +36,6 @@ There's no Xcode project in the repo. GitHub Actions generates it with [XcodeGen
 
 **CarPlay Simulator Test** (`.github/workflows/carplay-sim.yml`) checks the car screen without a car:
 
-1. It runs the app in the iOS Simulator with CarPlay displays of several sizes (800×480, 1280×720, 1920×720 by default; others can be chosen when running it by hand).
+1. It runs the app in the iOS Simulator with CarPlay displays at several scales (800×480 px at @2, @3 and @1, so 400×240, 267×160 and 800×480 pt; other sizes can be chosen when running it by hand). The simulator's CarPlay only uses an 800×480 px area, so scale is what changes the layout.
 2. The app's demo mode (`-CarVideoDemo YES`) walks through every screen: the home grid, a real tap on the YouTube button, YouTube, the keyboard, and four sample videos in different shapes.
 3. The screenshots and the app's log are published to the `carplay-test` pre-release.
