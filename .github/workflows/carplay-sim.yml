@@ -125,19 +125,25 @@ jobs:
       - name: Walk through the car screens at each display size
         run: |
           LOG="$DATA/Library/Application Support/Diagnostics/diagnostics.log"
-          # Simulator ignores clicks on the first CarPlay display of a session, so attach one and throw it away.
-          bash scripts/carplay-sim/open-carplay.sh 800 480 2 warmup
-          bash scripts/carplay-sim/close-carplay.sh
-          rm -f "$OUT"/warmup-*
           for SPEC in $SIZES; do
             W=${SPEC%%x*}; REST=${SPEC#*x}; H=${REST%%@*}; S=${REST#*@}
             LABEL="${W}x${H}"
-            echo "::group::CarPlay display $SPEC"
-            bash scripts/carplay-sim/open-carplay.sh "$W" "$H" "$S" "$LABEL"
-            python3 -u scripts/carplay-sim/drive.py "$UDID" "$LOG" "$OUT" "$LABEL" || echo "Walk-through at $SPEC did not finish"
-            xcrun simctl io "$UDID" screenshot "$OUT/phone-$LABEL.png" || true
-            bash scripts/carplay-sim/close-carplay.sh
-            echo "::endgroup::"
+            # The simulator sometimes ignores taps on a freshly attached CarPlay display; if the app doesn't
+            # open within a minute, detach the display and attach it again.
+            for TRY in 1 2 3; do
+              echo "::group::CarPlay display $SPEC, attempt $TRY"
+              bash scripts/carplay-sim/open-carplay.sh "$W" "$H" "$S" "$LABEL"
+              set +e
+              python3 -u scripts/carplay-sim/drive.py "$UDID" "$LOG" "$OUT" "$LABEL"
+              RESULT=$?
+              set -e
+              xcrun simctl io "$UDID" screenshot "$OUT/phone-$LABEL.png" || true
+              bash scripts/carplay-sim/close-carplay.sh
+              echo "::endgroup::"
+              [ "$RESULT" = "2" ] || break
+              echo "The app didn't open on attempt $TRY; reattaching the CarPlay display"
+            done
+            [ "$RESULT" = "0" ] || echo "Walk-through at $SPEC did not finish (status $RESULT)"
           done
 
       - name: Collect results

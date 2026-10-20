@@ -6,6 +6,7 @@ takes a CarPlay screenshot for each shot, performs each tap through the Simulato
 "[Demo] done".
 
 Usage: drive.py <udid> <diagnostics.log> <out_dir> <label>
+Exit status: 0 finished, 1 stopped part-way, 2 the app never opened on the car screen.
 """
 import os
 import re
@@ -175,6 +176,10 @@ def main():
                     dx, dy = to_desktop(spot[0], spot[1], img_w, img_h, geom)
                     print(f"  app icon at {spot} -> desktop {dx},{dy}")
                     focus_carplay_window(geom)
+                    # A first tap on empty wallpaper (bottom right), as the Music DL test does, then the icon.
+                    x, y, w, h = geom
+                    run(["cliclick", f"c:{x + w - 30},{y + h - 20}"])
+                    time.sleep(1)
                     run(["cliclick", f"c:{dx},{dy}"])
                     time.sleep(3)
                     if not any("Car screen connected" in l for l in log_lines(log_path)[processed:]):
@@ -192,7 +197,8 @@ def main():
 
     print("  timed out" + ("" if started else " (the app never opened on the car screen)"))
     screenshot(udid, os.path.join(out_dir, f"{label}-99-timeout.png"))
-    return 1
+    # 2 = never opened (worth reattaching the display), 1 = stopped part-way.
+    return 1 if started else 2
 
 
 if __name__ == "__main__":
