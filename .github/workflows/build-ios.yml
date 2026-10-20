@@ -1,0 +1,139 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'scripts/carplay-sim/**'
+      - '.github/workflows/carplay-sim.yml'
+  pull_request:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ipa:
+    name: Build unsigned IPA (TrollStore)
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      BUNDLE_ID: com.huzaifa.carvideo
+      VERSION: 1.0.${{ github.run_number }}
+      SOURCE_URL: https://huzaifaazhar.github.io/carplay-video-player
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: |
+          xcodegen generate
+          xcodebuild -version
+
+      - name: Build archive (unsigned)
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild archive \
+            -project CarVideo.xcodeproj \
+            -scheme CarVideo \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/CarVideo.xcarchive \
+            -quiet \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build/xcodebuild.log
+
+      - name: Show compiler errors and warnings
+        if: always()
+        run: |
+          grep -E "error:|warning:" build/xcodebuild.log | grep -v "appintentsmetadataprocessor" | sort -u | head -200 || true
+
+      - name: Package .ipa (ad-hoc signed with entitlements)
+        run: |
+          set -euo pipefail
+          APP_PATH="build/CarVideo.xcarchive/Products/Applications/CarVideo.app"
+          test -d "$APP_PATH"
+          rm -rf build/Payload
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+
+          # The project's entitlements (SBStarkCapable etc.) plus the app identifier.
+          cp CarVideo/CarVideo.entitlements build/app.entitlements
+          /usr/libexec/PlistBuddy -c "Add :application-identifier string ${BUNDLE_ID}" build/app.entitlements
+          plutil -lint build/app.entitlements
+
+          codesign --force --sign - --entitlements build/app.entitlements build/Payload/CarVideo.app
+          codesign -d --entitlements - build/Payload/CarVideo.app
+
+          cd build
+          zip -qry CarVideo.ipa Payload
+          echo "IPA size:"
+          ls -lh CarVideo.ipa
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" Payload/CarVideo.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Payload/CarVideo.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" Payload/CarVideo.app/Info.plist
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v5
+        # Artifact storage is shared across the account and can fill up; the release below is the reliable download.
+        continue-on-error: true
+        with:
+          name: CarVideo-ios-ipa
+          path: build/CarVideo.ipa
+          retention-days: 14
+
+      - name: Publish release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest build/CarVideo.ipa \
+            --latest \
+            --target "$GITHUB_SHA" \
+            --title "Car Video $VERSION" \
+            --notes "Unsigned IPA built from ${GITHUB_SHA::7} on $(date -u '+%Y-%m-%d %H:%M UTC'). Install with TrollStore (the car screen needs TrollStore's entitlements), or add the source $SOURCE_URL/apps.json in TrollApps."
+
+      # ---- AltStore-format source for TrollApps / AltStore / SideStore, served from GitHub Pages ----
+      - name: Build app source
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          rm -rf _source && mkdir -p _source/screenshots
+          cp build/CarVideo.ipa _source/CarVideo.ipa
+          cp CarVideo/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png _source/icon.png
+          cp source-assets/screenshots/* _source/screenshots/ 2>/dev/null || true
+          cp source-assets/index.html _source/index.html
+          git log -1 --pretty=%B | grep -v '^Claude-Session:' > "$RUNNER_TEMP/changelog.txt" || true
+          python3 scripts/make_source.py _source build/CarVideo.ipa "$VERSION" "${{ github.run_number }}" "$SOURCE_URL" "$RUNNER_TEMP/changelog.txt"
+          touch _source/.nojekyll
+          ls -la _source
+
+      - name: Deploy source to GitHub Pages
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_source
+          force_orphan: true

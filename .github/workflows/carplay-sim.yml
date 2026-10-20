@@ -1,0 +1,158 @@
+name: CarPlay Simulator Test
+
+# Runs the app in the iOS Simulator with CarPlay displays of several sizes attached, lets the app's demo
+# mode walk through every car screen (home grid, a real tap on the YouTube button, YouTube, the keyboard,
+# video in four shapes) and photographs each step. Results go to the "carplay-test" pre-release.
+on:
+  workflow_dispatch:
+    inputs:
+      sizes:
+        description: 'CarPlay displays to test, as WIDTHxHEIGHT@SCALE separated by spaces'
+        required: false
+        default: '800x480@2 1280x720@2 1920x720@2'
+  push:
+    branches:
+      - main
+    paths:
+      - 'CarVideo/**'
+      - 'project.yml'
+      - '.github/workflows/carplay-sim.yml'
+      - 'scripts/carplay-sim/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: carplay-sim-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  carplay:
+    name: CarPlay in the iOS Simulator
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      OUT: ${{ github.workspace }}/carplay-results
+      SIZES: ${{ github.event.inputs.sizes || '800x480@2 1280x720@2 1920x720@2' }}
+      BUNDLE_ID: com.huzaifa.carvideo
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install tools
+        run: |
+          brew install xcodegen cliclick ffmpeg
+          python3 -m pip install --quiet --break-system-packages pillow 2>/dev/null || python3 -m pip install --quiet pillow
+
+      - name: Make sample videos in four shapes
+        run: |
+          mkdir -p samples "$OUT"
+          sample() {
+            ffmpeg -loglevel error -y -f lavfi -i "testsrc2=size=$2:rate=30" -f lavfi -i "sine=frequency=$3" \
+              -t 40 -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest "samples/$1.mp4"
+          }
+          sample "Widescreen 16x9" 1280x720 440
+          sample "Classic 4x3" 960x720 550
+          sample "Phone Vertical 9x16" 720x1280 660
+          sample "Cinema 21x9" 1680x720 330
+          ls -la samples
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project CarVideo.xcodeproj \
+            -scheme CarVideo \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim \
+            -quiet \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES 2>&1 | tail -40
+          APP=$(find build/sim/Build/Products -maxdepth 2 -name "CarVideo.app" | head -1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          echo "Built $APP"
+          codesign -d --entitlements - "$APP" 2>&1 | head -30 || true
+
+      - name: Boot simulator with CarPlay enabled
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          devices = json.load(sys.stdin)['devices']
+          for runtime, items in sorted(devices.items(), reverse=True):
+              if 'iOS' not in runtime: continue
+              for d in items:
+                  if d['name'].startswith('iPhone') and 'Pro' in d['name']:
+                      print(d['udid']); sys.exit()
+          ")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl list devices | grep "$UDID"
+          defaults write com.apple.iphonesimulator CarPlay -bool YES
+          defaults write com.apple.iphonesimulator CarPlayExtraOptions -bool YES
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          open -a Simulator --args -CurrentDeviceUDID "$UDID"
+          sleep 20
+
+      - name: Install the app with the sample videos
+        run: |
+          xcrun simctl install "$UDID" "$APP"
+          DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)
+          mkdir -p "$DATA/Documents"
+          cp samples/*.mp4 "$DATA/Documents/"
+          echo "DATA=$DATA" >> "$GITHUB_ENV"
+          xcrun simctl privacy "$UDID" grant location "$BUNDLE_ID" || true
+          xcrun simctl spawn "$UDID" log stream --style compact \
+            --predicate 'subsystem == "com.huzaifa.carvideo" OR (process == "CarVideo" AND (messageType == error OR messageType == fault)) OR (composedMessage CONTAINS[c] "carvideo" AND process != "CarVideo")' \
+            > "$OUT/app-log.txt" 2>&1 &
+          echo $! > "$OUT/logstream.pid"
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" -CarVideoDemo YES
+          sleep 15
+          xcrun simctl io "$UDID" screenshot "$OUT/phone-1-videos.png"
+
+      - name: Walk through the car screens at each display size
+        run: |
+          LOG="$DATA/Library/Application Support/Diagnostics/diagnostics.log"
+          for SPEC in $SIZES; do
+            W=${SPEC%%x*}; REST=${SPEC#*x}; H=${REST%%@*}; S=${REST#*@}
+            LABEL="${W}x${H}"
+            echo "::group::CarPlay display $SPEC"
+            bash scripts/carplay-sim/open-carplay.sh "$W" "$H" "$S" "$LABEL"
+            python3 scripts/carplay-sim/drive.py "$UDID" "$LOG" "$OUT" "$LABEL" || echo "Walk-through at $SPEC did not finish"
+            xcrun simctl io "$UDID" screenshot "$OUT/phone-$LABEL.png" || true
+            bash scripts/carplay-sim/close-carplay.sh
+            echo "::endgroup::"
+          done
+
+      - name: Collect results
+        if: always()
+        run: |
+          screencapture -x "$OUT/desktop-final.png" || true
+          kill "$(cat "$OUT/logstream.pid")" 2>/dev/null || true
+          if [ -n "${DATA:-}" ] && [ -f "$DATA/Library/Application Support/Diagnostics/diagnostics.log" ]; then
+            cp "$DATA/Library/Application Support/Diagnostics/diagnostics.log" "$OUT/diagnostics.log"
+          fi
+          echo "===== diagnostics.log ====="; cat "$OUT/diagnostics.log" 2>/dev/null || echo "(none)"
+          echo "===== app-log.txt (tail) ====="; tail -60 "$OUT/app-log.txt" 2>/dev/null || true
+          ls -la "$OUT"
+
+      - name: Publish results
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          find "$OUT" -type f -size 0 -delete
+          rm -f "$OUT/logstream.pid"
+          gh release delete carplay-test --yes --cleanup-tag || true
+          gh release create carplay-test "$OUT"/* \
+            --prerelease --target "$GITHUB_SHA" \
+            --title "CarPlay simulator test #${{ github.run_number }}" \
+            --notes "Automated CarPlay simulator run for ${GITHUB_SHA::7} at: $SIZES. Not an app build; get the app from the 'latest' release."

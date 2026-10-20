@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car Video Source</title>
+<style>
+  :root { --bg: #0d1117; --card: #161b22; --text: #e6edf3; --muted: #8b949e; --accent: #ff7a1f; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text);
+         display: flex; flex-direction: column; align-items: center; padding: 48px 16px; gap: 14px; text-align: center; }
+  img.icon { width: 104px; height: 104px; border-radius: 24px; }
+  h1 { margin: 4px 0 0; }
+  p { color: var(--muted); max-width: 520px; margin: 0; }
+  code { display: block; background: var(--card); padding: 12px 14px; border-radius: 10px; word-break: break-all; color: var(--text); }
+  .buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 6px; }
+  a.button { background: var(--accent); color: white; text-decoration: none; padding: 11px 18px; border-radius: 12px; font-weight: 600; }
+  a.secondary { background: var(--card); color: var(--text); }
+  .shots { display: flex; gap: 12px; overflow-x: auto; max-width: 100%; padding: 8px 0; }
+  .shots img { height: 220px; border-radius: 14px; }
+</style>
+</head>
+<body>
+  <img class="icon" src="icon.png" alt="">
+  <h1>Car Video</h1>
+  <p>Your videos and YouTube on the CarPlay screen. Needs TrollStore.</p>
+  <p>Add this source in TrollApps, AltStore or SideStore:</p>
+  <code>https://huzaifaazhar.github.io/carplay-video-player/apps.json</code>
+  <div class="buttons">
+    <a class="button" href="altstore://source?url=https://huzaifaazhar.github.io/carplay-video-player/apps.json">Add to AltStore</a>
+    <a class="button" href="sidestore://source?url=https://huzaifaazhar.github.io/carplay-video-player/apps.json">Add to SideStore</a>
+    <a class="button secondary" href="CarVideo.ipa">Download IPA</a>
+  </div>
+  <div class="shots" id="shots"></div>
+  <script>
+    fetch('apps.json').then(r => r.json()).then(s => {
+      const box = document.getElementById('shots');
+      (s.apps[0].screenshots || []).forEach(u => { const i = document.createElement('img'); i.src = u; i.alt = ''; box.appendChild(i); });
+    }).catch(() => {});
+  </script>
+</body>
+</html>

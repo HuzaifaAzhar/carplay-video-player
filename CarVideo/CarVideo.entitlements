@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Lets the app put its own window on the CarPlay screen (role UIWindowSceneSessionRoleCarPlay),
+	     like Apple's own CarPlay apps. Private: only TrollStore can install an app carrying it. -->
+	<key>SBStarkCapable</key>
+	<true/>
+	<!-- Keep the web view's processes (YouTube) running while the iPhone itself is locked. -->
+	<key>com.apple.runningboard.assertions.webkit</key>
+	<true/>
+	<key>com.apple.multitasking.systemappassertions</key>
+	<true/>
+</dict>
+</plist>
